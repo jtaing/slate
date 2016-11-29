@@ -13,7 +13,6 @@ includes:
   - version
   - auth
   - profiles
-  - errors
 
 search: true
 ---
