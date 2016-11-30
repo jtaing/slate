@@ -14,6 +14,7 @@ includes:
   - auth
   - profiles
   - users
+  - providers
 
 search: true
 ---
