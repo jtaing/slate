@@ -380,7 +380,7 @@ You will get an error if the new password does not follow the password complexit
 
 
 ##############################
-# Recover a forgotten password
+## Recover a forgotten password
 ##############################
 
 > Ask the server to initiate the password recovery process for *johndoe*
