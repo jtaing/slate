@@ -154,7 +154,7 @@ It takes the same parameters:
 
 ```python
 import requests
-from werkzeug.datastructures import MultiDict
+from webob.multidict import MultiDict
 
 payload = MultiDict([
   ('userLogin', 'johndoe'), 
