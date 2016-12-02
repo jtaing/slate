@@ -15,6 +15,7 @@ includes:
   - profiles
   - users
   - providers
+  - brands
 
 search: true
 ---
