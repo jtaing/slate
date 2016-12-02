@@ -16,6 +16,7 @@ includes:
   - users
   - providers
   - brands
+  - geozones
 
 search: true
 ---
