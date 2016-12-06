@@ -17,6 +17,8 @@ includes:
   - providers
   - brands
   - geozones
+  - batches
+  - devices
 
 search: true
 ---
