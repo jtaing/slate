@@ -851,11 +851,6 @@ You may replace the lamp on a *streetlight* device by calling the method `replac
 import requests
 from webob.multidict import MultiDict
 
-# SLV CMS parameters
-SLVCMSHost = "172.16.244.150:8080"
-SLVCMSPath = "reports"
-SLV_URL="http://" + SLVCMSHost+ "/" + SLVCMSPath
-
 payload = MultiDict([
   ('controllerStrId', 'mycontroller'),
   ('idOnController','lamp1'),
@@ -896,10 +891,76 @@ You may replace the smart node on a *streetlight* device by calling the method `
 |newNetworkId (required)    | Unique address of the new smart node |
 
 
+###########################
+## Commission controllers
+###########################
 
-##########################
-## Commission devices
-##########################
+> Commissioning the controller configuration and devices on controller *mycontroller*
+
+```python
+import requests
+
+payload = {
+  'controllerStrId':'mycontroller',
+  'flags': 5,
+  'ser': 'json'
+}
+
+r = requests.post(SLV_URL + "/api/controllermanagement/commissionControllerAsync", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+{
+  "batchId" : "1481018818069",
+  "batchProgressMessage" : null,
+  "batchProgressValue" : -1,
+  "batchRunning" : true,
+  "cancelRequested" : false,
+  "cancelled" : false,
+  "errorCode" : "0",
+  "errorCodeLabel" : null,
+  "message" : null,
+  "status" : "OK",
+  "statusError" : false,
+  "statusOk" : true,
+  "value" :
+    {
+      "errorMessagesCount" : 0,
+      "infoMessagesCount" : 0,
+      "login" : "admin",
+      "status" : 0,
+      "stepResults" :
+        [
+        ],
+      "warningMessagesCount" : 0
+    }
+}
+```
+
+To commission a controller, i.e. **the controller itself and all devices attached to it**, use the method `commissionControllerAsync` available at `/api/controllermanagement`.
+
+|Arguments||
+|----------|---------|
+|controllerStrId (required) | Controller to commission|
+|flags (required)  | Indicates which items should be commissioned (int)|
+
+The `flags` parameter should be specified depending on whether you would like to commission the controller configuration, the dimming schedules applicable to the controller devices or/and the controller devices.
+
+|Flag                     |Value |
+|-------------------------|------|
+|Controller configuration | 1    |
+|Calendar and schedules   | 2    |
+|Controller devices       | 4    |
+
+If you want to commission more than one item, simply add the corresponding values.
+
+As commissioning a controller may take a long time, this method returns a batch object.
+
+###############################
+## Commission specific devices
+###############################
 
 > Commissioning devices *lamp1* and *lamp2* on controller *mycontroller*
 
@@ -949,7 +1010,7 @@ r = requests.post(SLV_URL + "/api/controllermanagement/commissionControllerDevic
 
 ```
 
-To commission devices, use the method `commissionControllerDevicesListAsync` available at `/api/controllermanagement`. It is possible to commission multiple devices at once as long as they all belong to the same controller. To do so, specify multiple `idOnController`.
+To commission a list of devices that are not controllers, use the method `commissionControllerDevicesListAsync` available at `/api/controllermanagement`. It is possible to commission multiple devices at once as long as they all belong to the same controller. To do so, specify multiple `idOnController`.
 
 As commissioning devices may take a long time, this method returns a batch object.
 
@@ -957,3 +1018,263 @@ As commissioning devices may take a long time, this method returns a batch objec
 |----------|---------|
 |controllerStrId (required) | Controller to which the device is attached|
 |idOnController (required)  | Device identifier on the controller|
+
+
+#################################################
+## Retrieve attributes values for a single device
+#################################################
+
+> Retrieving the latitude and longitude of device ID 16879
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('param0', '16879'),
+  ('valueName', 'lat'),
+  ('valueName', 'lng'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/getDeviceLastValues", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+[
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16879,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp1",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lat",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 48.84032042200468
+  },
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16879,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp1",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lng",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 2.3801171779632573
+  }
+]
+```
+
+To retrieve the latest values for a single device attributes, use the method `getDeviceLastValues` available at `/api/logging`. You may retrieve the value of multiple attributes at once by specifying multiple `valueName`.
+
+|Arguments||
+|----------|---------|
+|param0 (required)      | Device ID (int)|
+|valueName (required)   | Attribute name|
+|returnTimeAges         | Set to true to retrieve information about when those values have been recorded. Defaults to false|
+
+###################################################
+## Retrieve attributes values for multiple devices
+###################################################
+
+> Retrieving the latitude and longitude of devices ID 16879 and 16880
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('param0', '16879'),
+  ('param0', '16880'),
+  ('param1', 'lat'),
+  ('param1', 'lng'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/getDevicesLastValues", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+[
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16879,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp1",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lat",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 48.84032042200468
+  },
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16879,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp1",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lng",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 2.3801171779632573
+  },
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16880,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp2",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lat",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 48.840272758283675
+  },
+  {
+    "controllerStrId" : "mycontroller",
+    "deviceId" : 16880,
+    "errorMessage" : null,
+    "eventTime" : null,
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "lamp2",
+    "info" : null,
+    "meaningLabel" : null,
+    "name" : "lng",
+    "status" : "OK",
+    "updateTime" : null,
+    "value" : 2.380476593971253
+  }
+]
+
+```
+
+To retrieve the latest values for multiple devices, use the method `getDevicesLastValues` available at `/api/logging`. You may specify multiple `param0` and `param1` to retrieve the value of several attributes on more than one device.
+
+|Arguments||
+|----------|---------|
+|param0 (required)    | Device ID (int)|
+|param1 (required)    | Attribute name |
+
+
+###################################################
+## Retrieve attributes values for a whole geozone
+###################################################
+
+> Retrieving the name, latitude and longitude of all streetlights and controllers in geozone ID 3837. We also want to rename the columns in the result from *lat* and *lng* to *Latitude* and *Longitude*.
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('geozoneId', '3837'),
+  ('categoryStrId', 'streetlight'),
+  ('categoryStrId', 'controllerdevice'),
+  ('valueName', 'name'),
+  ('valueName', 'lat'),
+  ('valueName', 'lng'),
+  ('columnName', 'lat:Latitude'),
+  ('columnName', 'lng:Longitude'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/getGeoZoneDevicesLastValuesAsArray", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+{
+  "columnLabels" : null,
+  "columns" :
+    [
+       "name",
+       "Latitude",
+       "Longitude"
+    ],
+  "columnsCount" : 3,
+  "properties" :
+    {
+    },
+  "rowsCount" : 4,
+  "values" :
+    [
+       [
+          "New Controller",
+          48.84031689136024,
+          2.3790979385375977
+       ],
+       [
+          "My controller",
+          48.84031689136024,
+          2.3790979385375977
+       ],
+       [
+          "Lamp 1",
+          48.84032042200468,
+          2.3801171779632573
+       ],
+       [
+          "Lamp 2",
+          48.840272758283675,
+          2.380476593971253
+       ]
+    ]
+}
+
+```
+
+To retrieve the latest values for all devices belonging to a geozone, use the method `getGeozoneDevicesLastValuesAsArray` available at `/api/logging`. You may specify multiple categories and attributes by adding multiple `categoryStrId` and `valueName` to your request.
+
+In the server response, `columns` will list the attribute names by default. If you would like to receive different names instead, you may specify multiple `columnName`, one per attribute to rename, in the format `attribute name`:`desired column name`.
+
+|Arguments||
+|----------|---------|
+|geozoneId (required)     | Geozone ID (int)|
+|categoryStrId (required) | Category |
+|valueName (required)     | Attribute name|
+|columnName               | Mapping between the attribute name and the desired column name |
+|recurse                  | Set to true to obtain devices belonging to the whole geozone tree under the specified geozone. Defaults to false |
+
+############################################################
+## Retrieve paginated attributes values for a whole geozone
+############################################################
+
+To retrieve the latest values for all devices belonging to a geozone, but with a paginated response from the server, use the method `getDevicesLastValuesExtAsPaginatedArray` available at `/api/logging`. You may specify multiple attributes by adding multiple `returnedValueName` to your request.
+
+|Arguments||
+|----------|---------|
+|geozoneId (required)     | Geozone ID (int)|
+|returnedValueName (required)     | Attribute name|
+|pageSize               | Number of devices per page |
+|pageIndex            | Page number |
+|recurse                  | Set to true to obtain devices belonging to the whole geozone tree under the specified geozone. Defaults to false |
+
+
+###################
+## Import devices
+###################
+
+You may create devices in bulk by importing a CSV file. SDP files for powerline projects are also supported. The method to use is `importDevicesFromCsvFileAsync`, available at `/api/loggingmanagement`.
+
+The CSV file should be formatted as follows:
