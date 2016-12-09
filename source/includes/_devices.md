@@ -153,6 +153,121 @@ To create a device, use the method `createCategoryDevice` available at `/api/ass
 When creating a controller, set idOnController to "controllerdevice".
 </aside>
 
+#####################
+## Retrieve a device
+#####################
+
+> Retrieving the device ID 16872 
+
+```python
+import requests
+
+payload = {
+  'deviceId': '16872',
+  'ser': 'json'
+}
+
+r = requests.get(SLV_URL + "/api/asset/getDevice", params=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+{
+  "address" : null,
+  "categoryStrId" : "controllerdevice",
+  "controllerStrId" : "mycontroller",
+  "functionId" : null,
+  "geoZoneId" : 3837,
+  "geoZoneNamesPath" : "GeoZones/My new geozone",
+  "id" : 16872,
+  "idOnController" : "controllerdevice",
+  "lat" : 48.84031689136024,
+  "lng" : 2.3790979385375977,
+  "modelName" : null,
+  "name" : "My controller",
+  "nodeTypeStrId" : null,
+  "properties" :
+    [
+      {
+        "key" : "controller.firmwareVersion",
+        "value" : "xmltech.v1"
+      },
+      {
+        "key" : "firmwareVersion",
+        "value" : "xmltech.v1"
+      },
+      {
+        "key" : "controller.model",
+        "value" : null
+      },
+      {
+        "key" : "controller.host",
+        "value" : "localhost:8005"
+      },
+      {
+        "key" : "controller.installDate",
+        "value" : "2016/12/06 11:47:36"
+      },
+      {
+        "key" : "controller.updateTime",
+        "value" : ""
+      },
+      {
+        "key" : "power",
+        "value" : null
+      },
+      {
+        "key" : "powerCorrection",
+        "value" : null
+      },
+      {
+        "key" : "userproperty.ControllerCacheMode",
+        "value" : "default"
+      },
+      {
+        "key" : "userproperty.controller.auth.password",
+        "value" : "password"
+      },
+      {
+        "key" : "userproperty.reportFrequency",
+        "value" : 60
+      },
+      {
+        "key" : "userproperty.reportTime",
+        "value" : "06:00"
+      },
+      {
+        "key" : "userproperty.serverMsgUrl.webapp",
+        "value" : "http://localhost:8080/reports"
+      },
+      {
+        "key" : "userproperty.TimeZoneId",
+        "value" : "Europe/Paris"
+      },
+      {
+        "key" : "userproperty.timeout",
+        "value" : 30000
+      },
+      {
+        "key" : "userproperty.controller.auth.username",
+        "value" : "user"
+      },
+      {
+        "key" : "tooltip",
+        "value" : ""
+      }
+    ],
+  "technologyStrId" : null,
+  "type" : "device"
+}
+```
+
+To retrieve a device, use the method `getDevice` available at `/api/asset`. 
+
+|Arguments||
+|----------|---------|
+|deviceId (required)| Device ID (int) |
 
 ###################
 ## Update a device
@@ -1260,15 +1375,246 @@ In the server response, `columns` will list the attribute names by default. If y
 ## Retrieve paginated attributes values for a whole geozone
 ############################################################
 
+> Retrieving the name, latitude and longitude of all devices in geozone ID 3837, with two devices per page and reading the second page.
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('geozoneId', '3837'),
+  ('returnedValueName', 'name'),
+  ('returnedValueName', 'lat'),
+  ('returnedValueName', 'lng'),
+  ('pageSize', '2'),
+  ('pageIndex', '1'),
+  ('recurse', 'false'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/getDevicesLastValuesExtAsPaginatedArray", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+{
+  "columnLabels" : null,
+  "columns" :
+    [
+       "name",
+       "lat",
+       "lng"
+    ],
+  "columnsCount" : 3,
+  "pageIndex" : 1,
+  "pageSize" : 2,
+  "pagesCount" : 3,
+  "properties" :
+    {
+    },
+  "rowsCount" : 2,
+  "totalSize" : 5,
+  "values" :
+    [
+       [
+          "My controller",
+          48.84031689136024,
+          2.3790979385375977
+       ],
+       [
+          "Lamp 1",
+          48.84032042200468,
+          2.3801171779632573
+       ]
+    ]
+}
+```
+
+
 To retrieve the latest values for all devices belonging to a geozone, but with a paginated response from the server, use the method `getDevicesLastValuesExtAsPaginatedArray` available at `/api/logging`. You may specify multiple attributes by adding multiple `returnedValueName` to your request.
 
 |Arguments||
 |----------|---------|
-|geozoneId (required)     | Geozone ID (int)|
-|returnedValueName (required)     | Attribute name|
-|pageSize               | Number of devices per page |
-|pageIndex            | Page number |
-|recurse                  | Set to true to obtain devices belonging to the whole geozone tree under the specified geozone. Defaults to false |
+|geozoneId (required)         | Geozone ID (int)|
+|returnedValueName (required) | Attribute name|
+|pageSize (required)          | Number of devices per page |
+|pageIndex (required)         | Page number, starting from zero|
+|recurse (required)           | Set to true to obtain devices belonging to the whole geozone tree under the specified geozone |
+|addEventTimeColumns          | Set to true to retrieve the date and time at which those values have been recorded. Defaults to false|
+|filterAttributeName          | Searched attribute name|
+|filterAttributeOperator      | Search operator |
+|filterAttributeValue         | Searched value. If the search operator is binary, the two values should be separated by a pipe |
+|sortColumn                   | Sort attribute name |
+|sortDesc                     | Set to true to sort in descending order, false in ascending order |
+
+You may also restrict the results by adding search criteria. Each search criterion requires you to specify the attribute name being searched for, the search operator and the searched value. It is possible to add multiple search critiera by specifying multiple tuples (`filterAttributeName`, `filterAttributeOperator`, `filterAttributeValue`). Search operators available are listed below:
+
+| Operator | Description |
+|----------|-------------|
+| eq    | EQUAL |
+| ne    | NOT EQUAL   |
+| eq-i    | EQUAL IGNORE CASE   |
+| like    | LIKE  |
+| like-i    | LIKE IGNORE CASE  |
+| partial-match   | PARTIAL MATCH   |
+| partial-match-i   | PARTIAL MATCH IGNORE CASE   |
+| in    | IN  |
+| gt    | GREATER THAN  |
+| ge    | GREATER OR EQUAL  |
+| lt    | LOWER THAN  |
+| le    | LOWER OR EQUAL  |
+| nin   | NOT IN  |
+| begins    | BEGINS  |
+| begins-i    | BEGINS IGNORE CASE  |
+| ends    | ENDS  |
+| ends-i    | ENDS IGNORE CASE  |
+| between   | BETWEEN   |
+
+
+################################################################
+## Retrieve attributes values for a whole geozone in a CSV file
+################################################################
+
+> Creating a CSV file called `All devices named -lamp- in geozone 3837` with the name, latitude and longitude of all devices in geozone ID 3837 whose name contain `lamp`
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('geozoneId', '3837'),
+  ('returnedValueName', 'name'),
+  ('returnedValueName', 'lat'),
+  ('returnedValueName', 'lng'),
+  ('recurse', 'false'),
+  ('filterAttributeName', 'name'),
+  ('filterAttributeOperator', 'partial-match-i'),
+  ('filterAttributeValue', 'lamp'),
+  ('csvPropertyName', 'fileBaseName'),
+  ('csvPropertyValue', 'All devices named -lamp- in geozone 3837'),
+  ('csvPropertyName', 'separatorChar'),
+  ('csvPropertyValue', ';'),
+  ('csvPropertyName', 'header'),
+  ('csvPropertyValue', 'true'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/createDevicesLastValuesExtAsPaginatedArrayCsvFileUrl", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+{
+  "errorCode" : "0",
+  "errorCodeLabel" : null,
+  "message" : null,
+  "status" : "OK",
+  "statusError" : false,
+  "statusOk" : true,
+  "value" : "/repository/protected-files/exports/admin/e036605902c02dd00b6e4574cc4b9f53/All%20devices%20named%20-lamp-%20in%20geozone%203837.csv"
+}
+```
+
+
+To obtain the latest values for all devices belonging to a geozone inside a CSV file, call the method `createDevicesLastValuesExtAsPaginatedArrayCsvFileUrl` available at `/api/logging`.
+
+|Arguments||
+|----------|---------|
+|geozoneId (required)         | Geozone ID (int)|
+|returnedValueName (required) | Attribute name|
+|recurse (required)           | Set to true to obtain devices belonging to the whole geozone tree under the specified geozone |
+|addEventTimeColumns          | Set to true to retrieve the date and time at which those values have been recorded. Defaults to false|
+|filterAttributeName          | Searched attribute name|
+|filterAttributeOperator      | Search operator |
+|filterAttributeValue         | Searched value. If the search operator is binary, the two values should be separated by a pipe |
+|csvPropertyName              | CSV property name |
+|csvPropertyValue             | CSV property value |
+
+CSV properties are described below. Note that it is possible to specify multiple properties by adding several couples `csvPropertyName`/`csvPropertyValue` to your request.
+
+| CSV property name | Description |
+|-------------------|-------------|
+| fileBaseName  | CSV filename (excluding the .csv extension) |
+| separatorChar | CSV separator |
+| header        | If set to true, includes a header line in the CSV file |
+
+The server responds with a file path in `value`. You may then download the file from the concatenation of `SLV_URL` and `value`.
+
+
+###################################
+## Retrieve device logging history
+###################################
+
+> Retrieving the values of `LampLevel` and `LampCommandLevel` on devices ID 5229 and 5230 between Nov 1st 2016 1:00pm and Nov 17th 2016 1:00pm
+
+```python
+import requests
+from webob.multidict import MultiDict
+
+payload = MultiDict([
+  ('deviceId', '5229'),
+  ('deviceId', '5230'),
+  ('name', 'LampLevel'),
+  ('name', 'LampCommandLevel'),
+  ('from', '01/11/2016 13:00:00'),
+  ('to', '17/11/2016 13:00:00'),
+  ('ser', 'json')
+])
+
+r = requests.post(SLV_URL + "/api/logging/getDevicesLogValues", data=payload, auth=('USERNAME', 'PASSWORD'))
+```
+
+> Sample response
+
+```python
+[
+  {
+    "controllerStrId" : "flowermarket",
+    "deviceId" : 5230,
+    "errorMessage" : null,
+    "eventTime" : "2016-11-07 11:00:00",
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "stl0002",
+    "info" : "",
+    "meaningLabel" : null,
+    "name" : "LampLevel",
+    "status" : "OK",
+    "updateTime" : "2016-11-07 18:08:07",
+    "value" : 100.0
+  },
+  {
+    "controllerStrId" : "flowermarket",
+    "deviceId" : 5229,
+    "errorMessage" : null,
+    "eventTime" : "2016-11-07 18:02:26",
+    "eventTimeAgeInSeconds" : null,
+    "idOnController" : "stl0001",
+    "info" : "",
+    "meaningLabel" : null,
+    "name" : "LampCommandLevel",
+    "status" : "OK",
+    "updateTime" : "2016-11-07 18:02:26",
+    "value" : 55.0
+  },
+   ...
+]
+```
+
+To retrieve the values of a device logging attribute over a period of time, use the method `getDevicesLogValues` available at `/api/logging`. You may specify multiple devices and/or multiple attributes.
+
+|Arguments||
+|----------|---------|
+|deviceId (required)  | Device ID (int) |
+|name (required)      | Attribute name |
+|from (required)      | Start date and time in the format dd/MM/yyyy HH:mm:ss |
+|to (required)        | End date and time in the format dd/MM/yyyy HH:mm:ss |
+
+
+<aside class="success">
+If a device has reported the same value multiple times over a period of time, the server will provide that value only once in the reponse to this request.
+</aside>
 
 
 ###################
